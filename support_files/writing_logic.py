@@ -139,26 +139,21 @@ class MermaidWriter:
                     pass
                 else:
                     parent_list.append(parent_name)
-        print("Find Parents Funct: ", parent_list)
-        print("Find Parents Funct Data: ", data_list)
+
         return parent_list
 
     def get_pGrp_children_groups(self, dict, data_list):
         parent = dict[0]
         children = dict[1]
-        #parent = parent['name']
-        #children = children['name']
-        
-        #print("parent:\n\n", parent)#, "\n\nchildren:\n\n", children)
+
         for child in children:
             self.child_parent = self.find_pGrp_parents(data_list, child)
-        #print("get child's parent: ", parent)
+
         if self.child_parent:
             if parent == 'NiFi Flow':
                 landing_filename = "output/landing_page.md"
                 self.write_landing(landing_filename, parent, children)
             else:
-                #print("Parent is not NiFi Flow: ", parent)
                 self.write_mermaid_code(parent, children, self.child_parent)
         else:
             pass
@@ -167,16 +162,11 @@ class MermaidWriter:
 
     def write_sub_canvas(self, filename, parent, children):
         '''Write out to file the processor group to processor group inteactions on main landing page'''
-        #parent_set = set()
-        self.add_pGrp_child_parent(children, parent)
-        #print("Write Sub Children: ", children)
-        print("Write Sub Parent: ", parent)
-        
-        #parent_set.add(parent)
 
-        #print("Is this dict: ", parent_set)
+        self.add_pGrp_child_parent(children, parent)
+
         main_parent = self.get_pGrp_main_parent(parent)
-        print('Returned Main Parent: ', main_parent)
+
         try:
             with open(filename, 'w', encoding='utf-8') as f:
                 l_wc_gen = LetterCycler()
@@ -213,14 +203,10 @@ class MermaidWriter:
             child_processor_group (list): A list of strings, where each string represents
                                           a child processor and will also be used as a directory name.
         '''
-        #print(parent_processor)
-        #print(parent)
-        #print("child: ", child_processor_group)
+
         name = parent_processor#['name']
 
         # Construct the full path to the directory where the .md file will reside.
-        #print("Name: ", name)
-        #print('Parent Processor Group: ', parent)   
         output_directory = 'output/' + name 
 
         # Create the directory if it doesn't exist.
@@ -255,12 +241,9 @@ class MermaidWriter:
         print("Complete Relationship List:\n", self.child_parent_relation)
 
     def get_pGrp_main_parent(self, parent):
-        #print("Passed to main parent: ", parent)
-        #print("Relationships: ", self.child_parent_relation)
+
         main_parent = self.child_parent_relation.get(parent)
-        #print('Main parent before iter: ', main_parent)
         main_parent = next(iter(main_parent))
-        #print('Main parent after iter: ', main_parent)
 
         return main_parent
         
