@@ -35,61 +35,24 @@ def get_pGrp_parent_child(data):
 
     return parent_processor_name, child_group_names
 
-def get_all_parent_child(data):
-    # Get parent processor name
-    parent_info = {"name":data.get("name"),
-                             "id":data.get("id"),
-                             "connections":data.get("connections", [])
-    }
-
-    # Get all names from "child_process_groups"
-    child_groups_info = []
-    child_group_names = []
-    child_process_groups = data.get("child_process_groups", [])
-    print("\n\nCHECK:\n\n",child_process_groups)
-    for group in child_process_groups:
-        group_name = group.get("name")
-        if group_name: # Ensure the 'name' key exists
-            child_group_names.append(group_name)
-    print("\n\nLOOK\n\n", child_group_names)
-
-    for group in child_process_groups:
-        group_name = group.get("name")
-        group_id = group.get("id")
-        group_connections = group.get("connections", [])
-
-        # Get processors within this child group
-        processors_in_group = []
-        for processor in group.get("processors", []):
-            processors_in_group.append({
-                "name": processor.get("name"),
-                "id": processor.get("id")
-            })
-
-        child_groups_info.append({
-            "name": group_name,
-            "id": group_id,
-            "connections": group_connections,
-            "processors": processors_in_group # Include processors for clarity
-        })
-
-    return parent_info, child_groups_info
-
-def search_all_dictionaries(dict_list):
+def nested_dictionary_search(dict):
     '''searches for a key and iterates through list of nested dictionaries'''
-    parents = []
-    my_dict = dict_list[0]
+    parent_pGrp = []
+    #child_pGrp = []
+    my_dict = dict[0]
         
     child_group = my_dict.get('child_process_groups')
 
     if child_group and isinstance(child_group, list) and len(child_group) > 0:
-        parents.append(get_pGrp_parent_child(my_dict))
+        parent_pGrp.append(get_pGrp_parent_child(my_dict))
             
-    for item in child_group:
-        if child_group and isinstance(child_group, list) and len(child_group) > 0:
-            parents.append(get_pGrp_parent_child(item))
+        for item in child_group:
+            #if child_group and isinstance(child_group, list) and len(child_group) > 0:
+            parent_pGrp.append(get_pGrp_parent_child(item))
+            #else:
+            #    child_pGrp.append(get_pGrp_parent_child(item))
 
-    return parents
+    return parent_pGrp
 
 def find_top_dict_containing_key(data, target_key):
     """
@@ -170,8 +133,47 @@ def remove_empty_lists_recursive(nested_list: List[Any], prune_immediate_empty_l
         final_processor_groups = filtered_list 
     return final_processor_groups
 
+def get_all_parent_child(data):
+    # Get parent processor name
+    parent_info = {"name":data.get("name"),
+                             "id":data.get("id"),
+                             "connections":data.get("connections", [])
+    }
+
+    # Get all names from "child_process_groups"
+    child_groups_info = []
+    child_group_names = []
+    child_process_groups = data.get("child_process_groups", [])
+
+    for group in child_process_groups:
+        group_name = group.get("name")
+        if group_name: # Ensure the 'name' key exists
+            child_group_names.append(group_name)
+
+    for group in child_process_groups:
+        group_name = group.get("name")
+        group_id = group.get("id")
+        group_connections = group.get("connections", [])
+
+        # Get processors within this child group
+        processors_in_group = []
+        for processor in group.get("processors", []):
+            processors_in_group.append({
+                "name": processor.get("name"),
+                "id": processor.get("id")
+            })
+
+        child_groups_info.append({
+            "name": group_name,
+            "id": group_id,
+            "connections": group_connections,
+            "processors": processors_in_group # Include processors for clarity
+        })
+
+    return parent_info, child_groups_info
+
 if __name__ == '__main__':
-    writer = MermaidWriter()
+    processor_groups = MermaidWriter()
 
     # Json file location
     file_path = 'nifi-crawl-output/test_process_group_details.json'
@@ -179,18 +181,20 @@ if __name__ == '__main__':
     # Read in json data file
     data = read_json_dict(file_path)
 
-    # Search through data and find all nested dictionaries
-    all_dicts = find_top_dict_containing_key(data, 'name')
+    # Find the main dictionary that contains all information and extract it
+    main_dict = find_top_dict_containing_key(data, 'name')
+    ################ Use Main Dict as starting point for getting the recursive information  about processors out ############################
+    #print(main_dict)
 
-    # Iterate through all dictionaries and find relevant info
-    parent_processor_groups = list(search_all_dictionaries(all_dicts))
-
+    # Iterate through dictionary and find relevant info
+    parent_processor_groups = list(nested_dictionary_search(main_dict))
+    
     # Clean out any completely empty list values
     clean_list = remove_empty_lists_recursive(parent_processor_groups)
-    print("Cleaned List:\n\n", clean_list)
+    
     # Build all relationships and initiate code generation
     for item in clean_list:
-        writer.get_pGrp_children_groups(item, clean_list)
+        processor_groups.get_pGrp_children_groups(item, clean_list)
 
     # Print out complete relationship dictionary
-    writer.print_relation_list()
+    processor_groups.print_relation_list()
