@@ -1,0 +1,6 @@
+*.ipynb
+__pycache__/
+base_charts/
+formatted_charts/
+nifi-crawl-output/
+output/
